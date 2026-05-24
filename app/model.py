@@ -47,9 +47,9 @@ class ModelHandler:
             transaction.v17, transaction.v18, transaction.v19, transaction.v20,
             transaction.v21, transaction.v22, transaction.v23, transaction.v24,
             transaction.v25, transaction.v26, transaction.v27, transaction.v28,
+            amount_scaled,
             transaction.hour_of_day,
             transaction.day_of_week,
-            amount_scaled,
         ]], dtype=np.float64)
 
         fraud_probability = float(self.model.predict_proba(features)[0][1])
