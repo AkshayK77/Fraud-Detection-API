@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create dummy model artifacts for CI
+        run: |
+          python - <<'EOF'
+          import joblib
+          import numpy as np
+          from sklearn.ensemble import RandomForestClassifier
+          from sklearn.preprocessing import StandardScaler
+          import os
+
+          os.makedirs("model", exist_ok=True)
+
+          # Train a minimal dummy model on synthetic data so the API can load it
+          rng = np.random.default_rng(42)
+          X = rng.standard_normal((200, 31))
+          y = np.array([0] * 190 + [1] * 10)
+
+          model = RandomForestClassifier(n_estimators=5, random_state=42)
+          model.fit(X, y)
+          joblib.dump(model, "model/fraud_model.pkl")
+
+          scaler = StandardScaler()
+          scaler.fit(rng.standard_normal((100, 1)))
+          joblib.dump(scaler, "model/scaler.pkl")
+
+          print("Dummy model artifacts created for CI")
+          EOF
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+      - name: All tests passed
+        run: echo "All tests passed - ready to deploy"
