@@ -120,7 +120,7 @@ Example output:
 
 To target the deployed API:
 ```bash
-API_URL=https://fraud-detection-api.onrender.com python scripts/simulate_transactions.py
+API_URL=https://fraud-detection-api-b0dx.onrender.com python scripts/simulate_transactions.py
 ```
 
 ## Deployment
@@ -140,7 +140,7 @@ On every push to `main`:
 2. Click **New → Web Service** → connect your GitHub repo
 3. Render detects the `Dockerfile` automatically
 4. Set **Health Check Path** to `/health`
-5. Click **Deploy** — your API will be live at `https://<your-service>.onrender.com`
+5. Click **Deploy** — your API will be live at `https://fraud-detection-api-b0dx.onrender.com`
 
 The `render.yaml` in this repo enables one-click deploy via the Render Blueprint.
 
