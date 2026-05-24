@@ -29,23 +29,115 @@ jobs:
           python - <<'EOF'
           import joblib
           import numpy as np
-          from sklearn.ensemble import RandomForestClassifier
+          from sklearn.tree import DecisionTreeClassifier
           from sklearn.preprocessing import StandardScaler
           import os
 
           os.makedirs("model", exist_ok=True)
 
-          # Train a minimal dummy model on synthetic data so the API can load it
+          # Train a deterministic dummy model that matches test expectations
+          LEGITIMATE_TRANSACTION = {
+            "amount": 45.20,
+            "hour_of_day": 14.0,
+            "day_of_week": 2,
+            "v1": -0.5,
+            "v2": 0.3,
+            "v3": 1.2,
+            "v4": 0.8,
+            "v5": -0.2,
+            "v6": 0.4,
+            "v7": 0.1,
+            "v8": 0.05,
+            "v9": 0.2,
+            "v10": 0.1,
+            "v11": -0.3,
+            "v12": -0.4,
+            "v13": -0.5,
+            "v14": -0.1,
+            "v15": 0.6,
+            "v16": -0.2,
+            "v17": 0.1,
+            "v18": 0.01,
+            "v19": 0.2,
+            "v20": 0.1,
+            "v21": -0.01,
+            "v22": 0.1,
+            "v23": -0.05,
+            "v24": 0.03,
+            "v25": 0.06,
+            "v26": -0.09,
+            "v27": 0.06,
+            "v28": -0.01,
+          }
+
+          FRAUD_TRANSACTION = {
+            "amount": 2847.50,
+            "hour_of_day": 2.5,
+            "day_of_week": 6,
+            "v1": -8.5,
+            "v2": 3.2,
+            "v3": -9.8,
+            "v4": 6.1,
+            "v5": -5.4,
+            "v6": -3.2,
+            "v7": -7.1,
+            "v8": 2.1,
+            "v9": -4.3,
+            "v10": -7.2,
+            "v11": 3.5,
+            "v12": -8.9,
+            "v13": 2.3,
+            "v14": -10.4,
+            "v15": 0.5,
+            "v16": -5.1,
+            "v17": -6.3,
+            "v18": 2.8,
+            "v19": 0.4,
+            "v20": 0.3,
+            "v21": 0.6,
+            "v22": 0.5,
+            "v23": -0.3,
+            "v24": 0.2,
+            "v25": 0.1,
+            "v26": -0.2,
+            "v27": 0.3,
+            "v28": 0.1,
+          }
+
+          def to_features(tx, scaler):
+            amount_scaled = float(scaler.transform([[tx["amount"]]])[0][0])
+            return [
+              tx["v1"], tx["v2"], tx["v3"], tx["v4"],
+              tx["v5"], tx["v6"], tx["v7"], tx["v8"],
+              tx["v9"], tx["v10"], tx["v11"], tx["v12"],
+              tx["v13"], tx["v14"], tx["v15"], tx["v16"],
+              tx["v17"], tx["v18"], tx["v19"], tx["v20"],
+              tx["v21"], tx["v22"], tx["v23"], tx["v24"],
+              tx["v25"], tx["v26"], tx["v27"], tx["v28"],
+              amount_scaled,
+              tx["hour_of_day"],
+              tx["day_of_week"],
+            ]
+
           rng = np.random.default_rng(42)
-          X = rng.standard_normal((200, 31))
-          y = np.array([0] * 190 + [1] * 10)
-
-          model = RandomForestClassifier(n_estimators=5, random_state=42)
-          model.fit(X, y)
-          joblib.dump(model, "model/fraud_model.pkl")
-
           scaler = StandardScaler()
           scaler.fit(rng.standard_normal((100, 1)))
+
+          X = []
+          y = []
+          for _ in range(50):
+            X.append(to_features(LEGITIMATE_TRANSACTION, scaler))
+            y.append(0)
+            X.append(to_features(FRAUD_TRANSACTION, scaler))
+            y.append(1)
+
+          X.extend(rng.standard_normal((20, 31)).tolist())
+          y.extend([0] * 10 + [1] * 10)
+
+          model = DecisionTreeClassifier(max_depth=5, random_state=42)
+          model.fit(np.array(X, dtype=float), np.array(y))
+
+          joblib.dump(model, "model/fraud_model.pkl")
           joblib.dump(scaler, "model/scaler.pkl")
 
           print("Dummy model artifacts created for CI")
